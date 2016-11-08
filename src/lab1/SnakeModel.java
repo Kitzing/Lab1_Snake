@@ -1,6 +1,7 @@
 package lab1;
 
 import java.awt.*;
+import java.awt.event.KeyEvent;
 
 /**
  * Created by agnesmardh on 2016-11-08.
@@ -42,7 +43,7 @@ public class SnakeModel extends GameModel {
     /** Graphical representation of a blank tile. */
     private static final GameTile BLANK_TILE = new GameTile();
 
-    /** The position of the collector. */
+    /** The position of the head. */
     private Position headPos;
 
     /** The direction of the collector. */
@@ -60,11 +61,11 @@ public class SnakeModel extends GameModel {
                 setGameboardState(i, j, BLANK_TILE);
             }
         }
-        // Insert the collector in the middle of the gameboard.
+        // Insert the head in the middle of the gameboard.
         this.headPos = new Position(size.width / 2, size.height / 2);
         setGameboardState(this.headPos, HEAD_TILE);
 
-        // Insert coins into the gameboard.
+        // Insert a coin into the gameboard.
             addCoin();
     }
 
@@ -86,6 +87,38 @@ public class SnakeModel extends GameModel {
         //this.coins.add(newCoinPos);   ???
     }
 
+    /**
+     * Update the direction of the collector
+     * according to the user's keypress.
+     */
+    private void updateDirection(final int key) {
+        switch (key) {
+            case KeyEvent.VK_LEFT:
+                this.direction = Directions.WEST;
+                break;
+            case KeyEvent.VK_UP:
+                this.direction = Directions.NORTH;
+                break;
+            case KeyEvent.VK_RIGHT:
+                this.direction = Directions.EAST;
+                break;
+            case KeyEvent.VK_DOWN:
+                this.direction = Directions.SOUTH;
+                break;
+            default:
+                // Don't change direction if another key is pressed
+                break;
+        }
+    }
+
+    /**
+     * Get next position of the head.
+     */
+    private Position getNextHeadPos() {
+        return new Position(
+                this.headPos.getX() + this.direction.getXDelta(),
+                this.headPos.getY() + this.direction.getYDelta());
+    }
 
     /**
      * Return whether the specified position is empty.
@@ -98,8 +131,43 @@ public class SnakeModel extends GameModel {
         return (getGameboardState(pos) == BLANK_TILE);
     }
 
+    /**
+     *
+     * @param pos The position to test.
+     * @return <code>false</code> if the position is outside the playing field, <code>true</code> otherwise.
+     */
+    private boolean isOutOfBounds(Position pos) {
+        return pos.getX() < 0 || pos.getX() >= getGameboardSize().width
+                || pos.getY() < 0 || pos.getY() >= getGameboardSize().height;
+    }
+
     @Override
     public void gameUpdate(final int lastKey) throws GameOverException {
+        updateDirection(lastKey);
+
+        // Erase the previous position of the head.
+        setGameboardState(this.headPos, BLANK_TILE);
+
+        // Change collector position.
+        this.headPos = getNextHeadPos();
+
+        if (isOutOfBounds(this.headPos)) {
+            throw new GameOverException(this.score);
+        }
+
+        //If a body tile and head tile are in the same pos. throw an exception...
+
+        // Draw collector at new position.
+        setGameboardState(this.headPos, HEAD_TILE);
+
+        // Remove the coin at the new collector position (if any)   ????
+        if(getGameboardState(headPos) == COIN_TILE) {
+            Position oldCoinPos = headPos;
+            setGameboardState(oldCoinPos, BLANK_TILE);
+            addCoin();
+            this.score++;
+        }
 
     }
+
 }
