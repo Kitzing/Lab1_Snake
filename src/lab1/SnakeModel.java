@@ -2,6 +2,7 @@ package lab1;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.util.LinkedList;
 
 /**
  * Created by agnesmardh on 2016-11-08.
@@ -40,17 +41,26 @@ public class SnakeModel extends GameModel {
     /** Graphical representation of the head */
     private static final GameTile HEAD_TILE = new RectangularTile(Color.CYAN);
 
+    /** Graphical representation of the body */
+    private static final GameTile BODY_TILE = new RectangularTile(Color.BLACK);
+
     /** Graphical representation of a blank tile. */
     private static final GameTile BLANK_TILE = new GameTile();
 
     /** The position of the head. */
     private Position headPos;
 
-    /** The direction of the collector. */
+    /** The direction of the head. */
     private Directions direction = Directions.NORTH;
 
     /** The number of coins found. */
     private int score;
+
+    /** The snake's body. */
+    private LinkedList <Position> body = new LinkedList();
+
+    private Position bodyPos;
+
 
     public SnakeModel() {
         Dimension size = getGameboardSize();
@@ -64,6 +74,11 @@ public class SnakeModel extends GameModel {
         // Insert the head in the middle of the gameboard.
         this.headPos = new Position(size.width / 2, size.height / 2);
         setGameboardState(this.headPos, HEAD_TILE);
+
+        //Inserts one body tile.
+        this.bodyPos = new Position(headPos.getX(), headPos.getY() + 1);
+        body.add(bodyPos);
+        setGameboardState(this.bodyPos, BODY_TILE);
 
         // Insert a coin into the gameboard.
             addCoin();
@@ -94,16 +109,24 @@ public class SnakeModel extends GameModel {
     private void updateDirection(final int key) {
         switch (key) {
             case KeyEvent.VK_LEFT:
-                this.direction = Directions.WEST;
+                if(direction != Directions.EAST) {
+                    this.direction = Directions.WEST;
+                }
                 break;
             case KeyEvent.VK_UP:
-                this.direction = Directions.NORTH;
+                if(direction != Directions.SOUTH) {
+                    this.direction = Directions.NORTH;
+                }
                 break;
             case KeyEvent.VK_RIGHT:
-                this.direction = Directions.EAST;
+                if(direction != Directions.WEST) {
+                    this.direction = Directions.EAST;
+                }
                 break;
             case KeyEvent.VK_DOWN:
-                this.direction = Directions.SOUTH;
+                if(direction != Directions.NORTH) {
+                    this.direction = Directions.SOUTH;
+                }
                 break;
             default:
                 // Don't change direction if another key is pressed
@@ -118,6 +141,12 @@ public class SnakeModel extends GameModel {
         return new Position(
                 this.headPos.getX() + this.direction.getXDelta(),
                 this.headPos.getY() + this.direction.getYDelta());
+    }
+
+    /** Updates the body positions */
+    private void updateBody(Position p) {
+        body.removeLast();
+        body.addFirst(p);
     }
 
     /**
@@ -148,19 +177,30 @@ public class SnakeModel extends GameModel {
         // Erase the previous position of the head.
         setGameboardState(this.headPos, BLANK_TILE);
 
+        //Update the body positions
+        updateBody(headPos);
+
         // Change collector position.
         this.headPos = getNextHeadPos();
+
 
         if (isOutOfBounds(this.headPos)) {
             throw new GameOverException(this.score);
         }
 
-        //If a body tile and head tile are in the same pos. throw an exception...
+        if(getGameboardState(headPos) == BODY_TILE) {
+            throw new GameOverException(this.score);
+        }
 
         // Draw collector at new position.
         setGameboardState(this.headPos, HEAD_TILE);
 
-        // Remove the coin at the new collector position (if any)   ????
+        //Draw the body at the new Position.
+        for (Position p : body) {
+            setGameboardState(p, BODY_TILE);
+        }
+
+        // Remove the coin at the new collector position (if any) and add one  ??????
         if(getGameboardState(headPos) == COIN_TILE) {
             Position oldCoinPos = headPos;
             setGameboardState(oldCoinPos, BLANK_TILE);
