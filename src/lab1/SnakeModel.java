@@ -197,6 +197,7 @@ public class SnakeModel extends GameModel {
      */
     @Override
     public void gameUpdate(final int lastKey) throws GameOverException {
+        Position oldHeadPos = headPos;
         updateDirection(lastKey);
 
         // Erase the previous position of the head.
@@ -210,7 +211,6 @@ public class SnakeModel extends GameModel {
         body.removeLast();
 
         // Change head position
-        Position oldHeadPos = headPos;
         this.headPos = getNextHeadPos();
 
         if (isOutOfBounds(this.headPos)) {
