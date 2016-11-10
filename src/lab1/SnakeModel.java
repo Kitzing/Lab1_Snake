@@ -190,6 +190,21 @@ public class SnakeModel extends GameModel {
     }
 
     /**
+     * @return <code>false</code> if the gameboard isn't full, <code>true</code> otherwise.
+     */
+    private boolean isFull() {
+
+        for (int i = 0; i < this.getGameboardSize().height; i++) {
+            for (int j = 0; j < this.getGameboardSize().width; j++) {
+                if (getGameboardState(i, j) == BLANK_TILE) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
      * This method is called repeatedly so that the
      * game can update its state.
      *
@@ -208,7 +223,7 @@ public class SnakeModel extends GameModel {
 
         //Update the body positions
         body.addFirst(headPos);
-        body.removeLast();
+
 
         // Change head position
         this.headPos = getNextHeadPos();
@@ -224,8 +239,14 @@ public class SnakeModel extends GameModel {
         // Remove the coin at the new collector position (if any) and add one
         if (getGameboardState(headPos) == COIN_TILE) {
             body.addFirst(oldHeadPos);
-            addCoin();
-            this.score++;
+            if (!isFull()) {
+                addCoin();
+                this.score++;
+            } else {
+                throw new GameOverException(this.score);
+            }
+        } else {
+            body.removeLast();
         }
 
         // Draw head at new position.
