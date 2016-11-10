@@ -1,12 +1,22 @@
 package lab1;
 
+import javafx.geometry.Pos;
+
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.util.ArrayDeque;
 import java.util.LinkedList;
 
 /**
- * Created by agnesmardh on 2016-11-08.
+ * Snake
+ * <p>
+ * Initially one gold coin are randomly placed in the matrix. The turquoise
+ * snake aims to collect the coin. Collecting the coin will make the snake
+ * grow and the gold coin will appear in a new, randomly selected place. For
+ * each coin the snake collects you get a point. The game is over when the
+ * snake leaves the game board or eats its own body.
  */
+
 public class SnakeModel extends GameModel {
 
     public enum Directions {
@@ -33,35 +43,52 @@ public class SnakeModel extends GameModel {
         }
     }
 
-    /** Graphical representation of a coin. */
+    /**
+     * Graphical representation of a coin.
+     */
     private static final GameTile COIN_TILE = new RoundTile(new Color(255, 215,
             0),
             new Color(255, 255, 0), 2.0);
 
-    /** Graphical representation of the head */
+    /**
+     * Graphical representation of the head
+     */
     private static final GameTile HEAD_TILE = new RectangularTile(Color.CYAN);
 
-    /** Graphical representation of the body */
+    /**
+     * Graphical representation of the body
+     */
     private static final GameTile BODY_TILE = new RectangularTile(Color.BLACK);
 
-    /** Graphical representation of a blank tile. */
+    /**
+     * Graphical representation of a blank tile.
+     */
     private static final GameTile BLANK_TILE = new GameTile();
 
-    /** The position of the head. */
+    /**
+     * The position of the head.
+     */
     private Position headPos;
 
-    /** The direction of the head. */
+    /**
+     * The direction of the head.
+     */
     private Directions direction = Directions.NORTH;
 
-    /** The number of coins found. */
+    /**
+     * The number of coins found.
+     */
     private int score;
 
-    /** The snake's body. */
-    private LinkedList <Position> body = new LinkedList();
-
+    /**
+     * The snake's body.
+     */
+    private ArrayDeque<Position> body = new ArrayDeque();
     private Position bodyPos;
 
-
+    /**
+     * Create a new model for the snake game.
+     */
     public SnakeModel() {
         Dimension size = getGameboardSize();
 
@@ -81,7 +108,7 @@ public class SnakeModel extends GameModel {
         setGameboardState(this.bodyPos, BODY_TILE);
 
         // Insert a coin into the gameboard.
-            addCoin();
+        addCoin();
     }
 
     /**
@@ -109,22 +136,22 @@ public class SnakeModel extends GameModel {
     private void updateDirection(final int key) {
         switch (key) {
             case KeyEvent.VK_LEFT:
-                if(direction != Directions.EAST) {
+                if (direction != Directions.EAST) {
                     this.direction = Directions.WEST;
                 }
                 break;
             case KeyEvent.VK_UP:
-                if(direction != Directions.SOUTH) {
+                if (direction != Directions.SOUTH) {
                     this.direction = Directions.NORTH;
                 }
                 break;
             case KeyEvent.VK_RIGHT:
-                if(direction != Directions.WEST) {
+                if (direction != Directions.WEST) {
                     this.direction = Directions.EAST;
                 }
                 break;
             case KeyEvent.VK_DOWN:
-                if(direction != Directions.NORTH) {
+                if (direction != Directions.NORTH) {
                     this.direction = Directions.SOUTH;
                 }
                 break;
@@ -143,17 +170,10 @@ public class SnakeModel extends GameModel {
                 this.headPos.getY() + this.direction.getYDelta());
     }
 
-    /** Updates the body positions */
-    private void updateBody(Position p) {
-        body.removeLast();
-        body.addFirst(p);
-    }
-
     /**
      * Return whether the specified position is empty.
      *
-     * @param pos
-     *            The position to test.
+     * @param pos The position to test.
      * @return true if position is empty.
      */
     private boolean isPositionEmpty(final Position pos) {
@@ -161,7 +181,6 @@ public class SnakeModel extends GameModel {
     }
 
     /**
-     *
      * @param pos The position to test.
      * @return <code>false</code> if the position is outside the playing field, <code>true</code> otherwise.
      */
@@ -170,6 +189,12 @@ public class SnakeModel extends GameModel {
                 || pos.getY() < 0 || pos.getY() >= getGameboardSize().height;
     }
 
+    /**
+     * This method is called repeatedly so that the
+     * game can update its state.
+     *
+     * @param lastKey The most recent keystroke.
+     */
     @Override
     public void gameUpdate(final int lastKey) throws GameOverException {
         updateDirection(lastKey);
@@ -177,37 +202,40 @@ public class SnakeModel extends GameModel {
         // Erase the previous position of the head.
         setGameboardState(this.headPos, BLANK_TILE);
 
+        //Erase the last body tile
+        setGameboardState(body.peekLast(), BLANK_TILE);
+
         //Update the body positions
-        updateBody(headPos);
+        body.addFirst(headPos);
+        body.removeLast();
 
-        // Change collector position.
+        // Change head position
+        Position oldHeadPos = headPos;
         this.headPos = getNextHeadPos();
-
 
         if (isOutOfBounds(this.headPos)) {
             throw new GameOverException(this.score);
         }
 
-        if(getGameboardState(headPos) == BODY_TILE) {
+        if (getGameboardState(headPos) == BODY_TILE) {
             throw new GameOverException(this.score);
         }
 
-        // Draw collector at new position.
+        // Remove the coin at the new collector position (if any) and add one
+        if (getGameboardState(headPos) == COIN_TILE) {
+            body.addFirst(oldHeadPos);
+            addCoin();
+            this.score++;
+        }
+
+        // Draw head at new position.
         setGameboardState(this.headPos, HEAD_TILE);
 
         //Draw the body at the new Position.
         for (Position p : body) {
             setGameboardState(p, BODY_TILE);
         }
-
-        // Remove the coin at the new collector position (if any) and add one  ??????
-        if(getGameboardState(headPos) == COIN_TILE) {
-            Position oldCoinPos = headPos;
-            setGameboardState(oldCoinPos, BLANK_TILE);
-            addCoin();
-            this.score++;
-        }
-
     }
 
 }
+
